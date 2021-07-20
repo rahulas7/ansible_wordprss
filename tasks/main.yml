@@ -1,0 +1,105 @@
+---
+- name: "Apache - Installing Packages"
+  yum:
+    name: httpd
+    state: present
+  notify:
+    - restart-apache
+    
+- name: "Apache - enabling php support"
+  shell: amazon-linux-extras install php7.4 -y
+  notify:
+    - restart-apache
+    
+    
+- name: "Apache - Creating httpd.conf from template"
+  template:
+    src: httpd.conf.tmpl
+    dest: /etc/httpd/conf/httpd.conf
+  notify:
+    - restart-apache
+    
+        
+- name: "Apache - Creating Virtualhost Configuration /etc/httpd/conf/{{ domain_name }}.conf"
+  template:
+    src: virtualhost.conf.tmpl
+    dest: "/etc/httpd/conf.d/{{ domain_name }}.conf"
+  notify:
+    - restart-apache
+    
+    
+- name: "Apache - Creating DocumentRoot /var/www/html/{{ domain_name }}"
+  file:
+    path: "/var/www/html/{{ domain_name }}"
+    state: directory
+    owner: "{{ httpd_user }}"
+    group: "{{ httpd_group }}"
+  notify:
+    - restart-apache
+    
+    
+- name: "Apache - Creating test.html & test.php"
+  copy:
+    src: "{{ item }}"
+    dest: "/var/www/html/{{ domain_name }}"
+    owner: "{{ httpd_user }}"
+    group: "{{ httpd_group }}"
+  with_items:
+    - test.html
+  notify:
+    - restart-apache
+    
+    
+        
+- name: "mariadb - Package Installation"
+  yum:
+    name: 
+      - mariadb-server
+      - MySQL-python
+    state: present
+        
+- name: "mariadb - Restarting/Enabling"
+  service:
+    name: mariadb
+    state: restarted
+    enabled: true
+        
+- name: "mariadb - Setting Root Password"
+  ignore_errors: true
+  mysql_user:
+    login_user: "root"
+    login_password: ""
+    user: "root"
+    password: "{{ mysql_root }}"
+    host_all: true
+        
+- name: "mariadb - removing anonymous users"
+  mysql_user:
+    login_user: "root"
+    login_password: "{{ mysql_root }}"
+    user: ""
+    host_all: true
+    state: absent
+
+- name: "mariadb- removing test database"
+  mysql_db:
+    login_user: "root"
+    login_password: "{{ mysql_root }}"
+    name: test
+    state: absent
+        
+- name: "mariadb - Creating database {{ db_database }}"  
+  mysql_db:
+    login_user: "root"
+    login_password: "{{ mysql_root }}"
+    name: "{{ mysql_db }}"
+    state: present
+    
+- name: "mariadb - Creating user {{ db_user }}"
+  mysql_user:
+    login_user: "root"
+    login_password: "{{ mysql_root }}"
+    user: "{{ mysql_user}}"
+    password: "{{ mysql_password }}"
+    host: "localhost"
+    priv: '{{ mysql_db }}.*:ALL'

@@ -1,0 +1,10 @@
+---
+httpd_port: "80"
+httpd_user: "apache"
+httpd_group: "apache"
+domain_name: "rahulsreenivas.tech"
+wp_url: "https://wordpress.org/latest.tar.gz"
+mysql_root: "qazxsw@321"
+mysql_db: "wordpress"
+mysql_user: "wordpress"
+mysql_password: "qazxsw@321"
